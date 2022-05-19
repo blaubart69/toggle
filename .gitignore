@@ -1,0 +1,4 @@
+CMakeFiles/**
+deps/**
+release/**
+build*/**
