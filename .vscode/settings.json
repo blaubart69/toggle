@@ -29,6 +29,7 @@
   ],
   "files.associations": {
     "mutex": "cpp",
-    "atomic": "cpp"
+    "atomic": "cpp",
+    "condition_variable": "cpp"
   }
 }
