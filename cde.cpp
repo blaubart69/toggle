@@ -11,7 +11,6 @@ void CDE::run_camera(std::function<void(uint8_t)> process) {
         // --- read ---
 
         const int32_t idx_cam_process = get_free();
-        //_Free[ idx_cam_process ] = false;
 
         // --- process ---
         
@@ -19,34 +18,18 @@ void CDE::run_camera(std::function<void(uint8_t)> process) {
         
         // --- write ---
 
-        //idx_cam_process = _InterlockedExchange( &_Camera2Detect, idx_cam_process );
         const int32_t detect = _Camera2Detect.exchange(idx_cam_process, std::memory_order_release);
 
-        if ( detect == ACTION_FREE ) {
-            
-            // detect has finished BEFORE we posted a new frame
-            // BUT was not able to go to sleep
-
-        } else if ( detect == ACTION_SLEEP ) {
-
-            frame_ready_camera.Set();
-
-        } else if ( detect == ACTION_EXIT ) {
-
-            printf( "CAMERA: ERROR 2\n" );
-            break;
-
-        } else if ( detect < ACTION_MIN || detect > ACTION_MAX ) {
-
-            printf( "CAMERA: ERROR 3\n" );
-
+               if ( detect == ACTION_FREE ) {   // detect has finished BEFORE we posted a new frame
+                                                // BUT was not able to go to sleep
+        } else if ( detect == ACTION_SLEEP ) {  frame_ready_camera.Set(); 
+        } else if ( detect == ACTION_EXIT )  {  printf( "CAMERA: exit\n" ); break;
+        } else if ( detect  < ACTION_MIN 
+                 || detect  > ACTION_MAX )   {  printf( "CAMERA: min max\n" );
         } else {
-
             // there was "work" in the slot
             // it got overwritten by a new frame
-
             _Free[ detect ].store(true, std::memory_order_release);
-
         } 
     } 
 
@@ -75,7 +58,7 @@ void CDE::run_detect(std::function<void(uint8_t)> process) {
                 std::memory_order_acq_rel,  // compare success: memory order for read-modify-write
                 std::memory_order_acquire   // compare failure: memory order for load               
             )) {
-                // FREE --> SLEEP successfull! take a nap...
+                // FREE --> SLEEP successfull. take a nap...
                 frame_ready_camera.WaitOne();         
                 continue;   // goto begin of loop and get a new "idx"
             }
@@ -86,9 +69,10 @@ void CDE::run_detect(std::function<void(uint8_t)> process) {
             }
         }
 
-               if ( idx == ACTION_SLEEP )                  { printf( "DETECT: idx == ACTION_SLEEP ... should not be possible\n" );
-        } else if ( idx == ACTION_EXIT  )                  { break;
-        } else if ( idx < ACTION_MIN || idx > ACTION_MAX ) { printf( "DETECT: too much action: %d\n", idx );
+               if ( idx == ACTION_SLEEP ) { printf( "DETECT: idx == ACTION_SLEEP ... should not be possible\n" );
+        } else if ( idx == ACTION_EXIT  ) { break;
+        } else if ( idx < ACTION_MIN 
+                 || idx > ACTION_MAX    ) { printf( "DETECT: too much action: %d\n", idx );
         } else {
            process(idx);
         }
