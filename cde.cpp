@@ -84,7 +84,7 @@ void CDE::run_detect(std::function<void(uint8_t)> process) {
                if ( encode == ACTION_FREE  ) { ; // encode thread was FREE, new work for him
         } else if ( encode == ACTION_SLEEP ) { frame_ready_detect.Set(); 
         } else if ( encode == ACTION_EXIT  ) { printf( "DETECT: ERROR 3\n" );
-        } else if ( encode  < ACTION_MIN || encode > ACTION_MAX ) { printf( "DETECT: ERROR 4\n" );
+        } else if ( encode  < ACTION_MIN || encode > ACTION_MAX ) { printf( "PANIC DETECT: <min >max\n" );
         } else {    
             // encode thread missed work-idx
             // mark this work-idx as FREE
@@ -92,6 +92,47 @@ void CDE::run_detect(std::function<void(uint8_t)> process) {
             _Free[ encode ].store(true, std::memory_order_release);
         }
     } 
+}
+//-----------------------------------------------------------------------------
+void CDE::run_encode(std::function<void(uint8_t)> process) {
+//-----------------------------------------------------------------------------
+    
+    for(;;) {
+
+        int32_t idx = _Detect2Encode.exchange(ACTION_FREE, std::memory_order_acquire );
+
+        if ( idx == ACTION_FREE ) {
+            // we are FREE and want to go to SLEEP
+
+            if ( std::atomic_compare_exchange_strong_explicit(
+                &_Detect2Encode,
+                &idx,                       // expected == FREE
+                ACTION_SLEEP,               // desired  == SLEEP
+                std::memory_order_acq_rel,  // compare success: memory order for read-modify-write
+                std::memory_order_acquire   // compare failure: memory order for load               
+            )) {
+                // FREE --> SLEEP successfull. take a nap...
+                frame_ready_detect.WaitOne();         
+                continue;   // goto begin of loop and get a new "idx"
+            }
+            else {
+                // != FREE
+                // idx == new work IDX
+                // there was work posted for us during the attempt going to SLEEP
+            }
+        }
+        //
+        // ---
+        //
+               if ( idx == ACTION_SLEEP ) { printf( "PANIC ENCODE: ACTION_SLEEP ... should not be possible\n" );
+        } else if ( idx == ACTION_EXIT  ) { break;
+        } else if ( idx  < ACTION_MIN 
+                 || idx  > ACTION_MAX   ) { printf( "PANIC ENCODE: <min >max: %d\n", idx );
+        } else {
+            process(idx);
+            _Free[ idx ].store(true, std::memory_order_release);
+        }
+    }
 }
 //-------------------------------------------------------------------------------------------------
 u_int8_t CDE::get_free() {

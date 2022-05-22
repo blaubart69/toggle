@@ -8,6 +8,7 @@ public:
 
     void run_camera(std::function<void(uint8_t)> process);
     void run_detect(std::function<void(uint8_t)> process);
+    void run_encode(std::function<void(uint8_t)> process);
     
 private:
 
