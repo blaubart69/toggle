@@ -1,16 +1,19 @@
+#include <thread>
+
 #include "cde.hpp"
 
 //-----------------------------------------------------------------------------
-void CDE::run_camera(std::function<void(uint8_t)> process) {
+void CDE::thread_camera(std::function<void(uint8_t)> process) {
 //-----------------------------------------------------------------------------
-
-    set_all_free();
 
     for ( ;; ) {
 
         // --- read ---
 
         const int32_t idx_cam_process = get_free();
+        if ( idx_cam_process == -1) {
+            break;
+        }
 
         // --- process ---
         
@@ -41,7 +44,7 @@ void CDE::run_camera(std::function<void(uint8_t)> process) {
 
 }
 //-----------------------------------------------------------------------------
-void CDE::run_detect(std::function<void(uint8_t)> process) {
+void CDE::thread_detect(std::function<void(uint8_t)> process) {
 //-----------------------------------------------------------------------------
     
     for(;;) {
@@ -51,9 +54,8 @@ void CDE::run_detect(std::function<void(uint8_t)> process) {
         if ( idx == ACTION_FREE ) {
             // we are FREE and want to go to SLEEP
 
-            if ( std::atomic_compare_exchange_strong_explicit(
-                &_Camera2Detect,
-                &idx,                       // expected == FREE
+            if ( _Camera2Detect.compare_exchange_strong(
+                idx,                        // expected == FREE
                 ACTION_SLEEP,               // desired  == SLEEP
                 std::memory_order_acq_rel,  // compare success: memory order for read-modify-write
                 std::memory_order_acquire   // compare failure: memory order for load               
@@ -94,7 +96,7 @@ void CDE::run_detect(std::function<void(uint8_t)> process) {
     } 
 }
 //-----------------------------------------------------------------------------
-void CDE::run_encode(std::function<void(uint8_t)> process) {
+void CDE::thread_encode(std::function<void(uint8_t)> process) {
 //-----------------------------------------------------------------------------
     
     for(;;) {
@@ -135,17 +137,24 @@ void CDE::run_encode(std::function<void(uint8_t)> process) {
     }
 }
 //-------------------------------------------------------------------------------------------------
-u_int8_t CDE::get_free() {
+int8_t CDE::get_free() {
 //-------------------------------------------------------------------------------------------------
 
-    bool expected = true;
-    if ( _Free[0].compare_exchange_strong(expected, false, std::memory_order_acq_rel) ) return 0;
-    if ( _Free[1].compare_exchange_strong(expected, false, std::memory_order_acq_rel) ) return 1;
-    if ( _Free[2].compare_exchange_strong(expected, false, std::memory_order_acq_rel) ) return 2;
-    if ( _Free[3].compare_exchange_strong(expected, false, std::memory_order_acq_rel) ) return 3;
-    if ( _Free[4].compare_exchange_strong(expected, false, std::memory_order_acq_rel) ) return 4;
+    for (int8_t i=0; i < 5; ++i) {
+        bool expected = true;
+        if ( _Free[i].compare_exchange_strong(expected, false, std::memory_order_acq_rel) ) {
+            return i;
+        }
+        /*
+        if ( _Free[1].compare_exchange_strong(expected, false, std::memory_order_acq_rel) ) return 1;
+        if ( _Free[2].compare_exchange_strong(expected, false, std::memory_order_acq_rel) ) return 2;
+        if ( _Free[3].compare_exchange_strong(expected, false, std::memory_order_acq_rel) ) return 3;
+        if ( _Free[4].compare_exchange_strong(expected, false, std::memory_order_acq_rel) ) return 4;
+        */
+    }
 
     printf( "GetFree ERROR 1\n" );
+    return -1;
 
     /*
     for (;;) {
@@ -166,4 +175,17 @@ void CDE::set_all_free() {
     for (int i=0; i < 5;++i) {
         _Free[i].store(true);    
     }
+}
+
+//-----------------------------------------------------------------------------
+void CDE::start(
+         std::function<void(uint8_t)> cbCamera
+        ,std::function<void(uint8_t)> cbDetect
+        ,std::function<void(uint8_t)> cbEncode ) {
+//-----------------------------------------------------------------------------
+
+    _threads[2] = std::thread( [=] { this->thread_encode(cbEncode); } );
+    _threads[1] = std::thread( [=] { this->thread_detect(cbDetect); } );
+    _threads[0] = std::thread( [=] { this->thread_camera(cbCamera); } );
+    
 }

@@ -1,19 +1,30 @@
 #include <functional>
 #include <atomic>
+#include <thread>
 
 #include "auto_reset_event.hpp"
 
 class CDE {
 public:
 
-    void run_camera(std::function<void(uint8_t)> process);
-    void run_detect(std::function<void(uint8_t)> process);
-    void run_encode(std::function<void(uint8_t)> process);
+    void start(
+         std::function<void(uint8_t)> cbCamera
+        ,std::function<void(uint8_t)> cbDetect
+        ,std::function<void(uint8_t)> cbEncode );
+
+    CDE() {
+        set_all_free();
+    }
     
 private:
 
-    uint8_t get_free();
+    int8_t  get_free();
     void    set_all_free();
+
+    
+    void thread_camera(std::function<void(uint8_t)> process);
+    void thread_detect(std::function<void(uint8_t)> process);
+    void thread_encode(std::function<void(uint8_t)> process);
 
     #define ACTION_FREE  -1
     #define ACTION_SLEEP -2
@@ -28,6 +39,8 @@ private:
 
     AutoResetEvent frame_ready_camera;
     AutoResetEvent frame_ready_detect;
+
+    std::thread _threads[3];
 
     //volatile long _Data[ 5 ];
 };
