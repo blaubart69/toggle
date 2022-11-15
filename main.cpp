@@ -14,15 +14,15 @@ void camera(uint8_t idx)
 void detect(uint8_t idx)
 {
     printf(">> D: %d\n", idx);
-    std::this_thread::sleep_for( std::chrono::milliseconds(600) );
+    std::this_thread::sleep_for( std::chrono::milliseconds(240) );
     printf("<< D: %d\n", idx);
 }
 bool encode(uint8_t idx)
 {
     printf(">> E: %d\n", idx);
-    std::this_thread::sleep_for( std::chrono::milliseconds(100) );
+    std::this_thread::sleep_for( std::chrono::milliseconds(170) );
     printf("<< E: %d\n", idx);
-    return true;
+    return false;
 }
 /*
 void run_cde()
@@ -40,7 +40,7 @@ void run_resource_pipeline()
 
     std::thread _threads[3];
 
-    //_threads[2] = std::thread( [&] { rp.encode_3(encode); } );
+    _threads[2] = std::thread( [&] { rp.encode_3(encode); } );
     _threads[1] = std::thread( [&] { rp.detect_2(detect); } );
     _threads[0] = std::thread( [&] { rp.camera_1(camera); } );
 

@@ -1,7 +1,7 @@
-#include "ResourcePipeline.hpp"
+#include "FrameWorkflow.hpp"
 
 //-----------------------------------------------------------------------------
-void ResourcePipeline::camera_1(std::function<void(uint8_t)> process) {
+void FrameWorkflow::camera_1(std::function<void(uint8_t)> process) {
 //-----------------------------------------------------------------------------
 
     for ( ;; ) {
@@ -12,7 +12,6 @@ void ResourcePipeline::camera_1(std::function<void(uint8_t)> process) {
         if ( idx_cam_process == -1) {
             break;
         }
-
         // --- process ---
         
         process(idx_cam_process);
@@ -26,13 +25,12 @@ void ResourcePipeline::camera_1(std::function<void(uint8_t)> process) {
 }
 
 //-----------------------------------------------------------------------------
-void ResourcePipeline::detect_2(std::function<void(uint8_t)> process) {
+void FrameWorkflow::detect_2(std::function<void(uint8_t)> process) {
 //-----------------------------------------------------------------------------
     
     for (;;) {
 
         int32_t idx;
-        puts("detect read");
         if ( ! read(_CameraToDetect, &idx ) )
         {
             puts("detect exit");
@@ -40,7 +38,6 @@ void ResourcePipeline::detect_2(std::function<void(uint8_t)> process) {
         }
         else
         {
-            printf("detect process %d\n", idx);
             process(idx);
             write(_DetectToEncode, idx);
         }
@@ -48,10 +45,8 @@ void ResourcePipeline::detect_2(std::function<void(uint8_t)> process) {
 }
 
 //-----------------------------------------------------------------------------
-void ResourcePipeline::encode_3(std::function<bool(uint8_t)> process) {
+void FrameWorkflow::encode_3(std::function<bool(uint8_t)> process) {
 //-----------------------------------------------------------------------------
-
-    puts("start encode");
 
     for (;;)
     {
@@ -74,7 +69,7 @@ void ResourcePipeline::encode_3(std::function<bool(uint8_t)> process) {
 
 }
 //-----------------------------------------------------------------------------
-void ResourcePipeline::write(Postbox& postbox, int32_t write_idx) {
+void FrameWorkflow::write(Postbox& postbox, int32_t write_idx) {
 //-----------------------------------------------------------------------------
 
     const int32_t before = postbox.exchange(write_idx);
@@ -103,7 +98,7 @@ void ResourcePipeline::write(Postbox& postbox, int32_t write_idx) {
     }
 }
 //-----------------------------------------------------------------------------
-bool ResourcePipeline::read(Postbox& postbox, int32_t* new_idx) {
+bool FrameWorkflow::read(Postbox& postbox, int32_t* new_idx) {
 //-----------------------------------------------------------------------------
 
     int32_t idx;
@@ -113,8 +108,8 @@ bool ResourcePipeline::read(Postbox& postbox, int32_t* new_idx) {
         idx = postbox.exchange(ACTION_FREE);
 
         if ( idx == ACTION_FREE ) {
-            // since our last read there is OUR FREE in the postbox.
-            // so we go to SLEEP.
+            // since our last read there is still OUR FREE in the postbox.
+            // go to SLEEP.
             if ( postbox.compare_exchange(idx, ACTION_SLEEP) ) { 
                 // FREE --> SLEEP successfull. take a nap...
                 postbox.wait_for_signal();         
@@ -128,6 +123,7 @@ bool ResourcePipeline::read(Postbox& postbox, int32_t* new_idx) {
         }
         else
         {
+            // there was work for us in the postbox. != ACTION_FREE
             break;
         }
     }
@@ -154,7 +150,7 @@ bool ResourcePipeline::read(Postbox& postbox, int32_t* new_idx) {
 
 }
 //-----------------------------------------------------------------------------
-int8_t ResourcePipeline::get_free() {
+int8_t FrameWorkflow::get_free() {
 //-----------------------------------------------------------------------------
 
     for (int8_t i=0; i < 5; ++i) {
@@ -172,15 +168,15 @@ int8_t ResourcePipeline::get_free() {
 
 }
 //-----------------------------------------------------------------------------
-void ResourcePipeline::set_free(int8_t idx) {
+void FrameWorkflow::set_free(int8_t idx) {
 //-----------------------------------------------------------------------------
 
-    printf("set_free: %d\n", idx);
+    printf("free: %d\n", idx);
     _Free[ idx ].store(true, std::memory_order_release);
 
 }
 //-----------------------------------------------------------------------------
-void ResourcePipeline::set_all_free() {
+void FrameWorkflow::set_all_free() {
 //-----------------------------------------------------------------------------
 
     for (int i=0; i < 5;++i) {
@@ -189,7 +185,7 @@ void ResourcePipeline::set_all_free() {
 
 }
 //-----------------------------------------------------------------------------
-ResourcePipeline::ResourcePipeline()
+FrameWorkflow::FrameWorkflow()
 //-----------------------------------------------------------------------------
 {
     set_all_free();

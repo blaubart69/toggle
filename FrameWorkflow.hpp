@@ -6,7 +6,7 @@
 #include "auto_reset_event.hpp"
 #include "Postbox.hpp"
 
-class ResourcePipeline
+class FrameWorkflow
 {
 public:
 
@@ -14,7 +14,7 @@ public:
     void detect_2(std::function<void(uint8_t)> process);
     void encode_3(std::function<bool(uint8_t)> process);
 
-    ResourcePipeline();
+    FrameWorkflow();
 
 private:
 

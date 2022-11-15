@@ -29,6 +29,5 @@ void Postbox::signal()
 
 Postbox::Postbox(int32_t init_value)
 {
-    printf("setting postbox to: %d\n", init_value);
     _box.store(init_value);
 }
