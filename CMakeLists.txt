@@ -10,8 +10,8 @@ set(SOURCES
     auto_reset_event.hpp
     Postbox.hpp
     Postbox.cpp
-    ResourcePipeline.cpp
-    ResourcePipeline.hpp
+    ImagePipeline.cpp
+    ImagePipeline.hpp
 )
 
 add_executable(toggle ${SOURCES})

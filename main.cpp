@@ -3,7 +3,7 @@
 #include <curses.h>
 
 //#include "cde.hpp"
-#include "ResourcePipeline.hpp"
+#include "ImagePipeline.hpp"
 
 void camera(uint8_t idx)
 {
@@ -36,13 +36,13 @@ void run_cde()
 
 void run_resource_pipeline()
 {
-    ResourcePipeline rp;
+    ImagePipeline pipe;
 
     std::thread _threads[3];
 
-    _threads[2] = std::thread( [&] { rp.encode_3(encode); } );
-    _threads[1] = std::thread( [&] { rp.detect_2(detect); } );
-    _threads[0] = std::thread( [&] { rp.camera_1(camera); } );
+    _threads[2] = std::thread( [&] { pipe.encode_3(encode); } );
+    _threads[1] = std::thread( [&] { pipe.detect_2(detect); } );
+    _threads[0] = std::thread( [&] { pipe.camera_1(camera); } );
 
     std::this_thread::sleep_for( std::chrono::seconds(60) );
 

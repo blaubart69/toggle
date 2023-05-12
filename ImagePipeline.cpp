@@ -1,7 +1,7 @@
-#include "FrameWorkflow.hpp"
+#include "ImagePipeline.hpp"
 
 //-----------------------------------------------------------------------------
-void FrameWorkflow::camera_1(std::function<void(uint8_t)> process) {
+void ImagePipeline::camera_1(std::function<void(uint8_t)> process) {
 //-----------------------------------------------------------------------------
 
     for ( ;; ) {
@@ -25,7 +25,7 @@ void FrameWorkflow::camera_1(std::function<void(uint8_t)> process) {
 }
 
 //-----------------------------------------------------------------------------
-void FrameWorkflow::detect_2(std::function<void(uint8_t)> process) {
+void ImagePipeline::detect_2(std::function<void(uint8_t)> process) {
 //-----------------------------------------------------------------------------
     
     for (;;) {
@@ -45,7 +45,7 @@ void FrameWorkflow::detect_2(std::function<void(uint8_t)> process) {
 }
 
 //-----------------------------------------------------------------------------
-void FrameWorkflow::encode_3(std::function<bool(uint8_t)> process) {
+void ImagePipeline::encode_3(std::function<bool(uint8_t)> process) {
 //-----------------------------------------------------------------------------
 
     for (;;)
@@ -69,7 +69,7 @@ void FrameWorkflow::encode_3(std::function<bool(uint8_t)> process) {
 
 }
 //-----------------------------------------------------------------------------
-void FrameWorkflow::write(Postbox& postbox, int32_t write_idx) {
+void ImagePipeline::write(Postbox& postbox, int32_t write_idx) {
 //-----------------------------------------------------------------------------
 
     const int32_t before = postbox.exchange(write_idx);
@@ -98,7 +98,7 @@ void FrameWorkflow::write(Postbox& postbox, int32_t write_idx) {
     }
 }
 //-----------------------------------------------------------------------------
-bool FrameWorkflow::read(Postbox& postbox, int32_t* new_idx) {
+bool ImagePipeline::read(Postbox& postbox, int32_t* new_idx) {
 //-----------------------------------------------------------------------------
 
     int32_t idx;
@@ -150,7 +150,7 @@ bool FrameWorkflow::read(Postbox& postbox, int32_t* new_idx) {
 
 }
 //-----------------------------------------------------------------------------
-int8_t FrameWorkflow::get_free() {
+int8_t ImagePipeline::get_free() {
 //-----------------------------------------------------------------------------
 
     for (int8_t i=0; i < 5; ++i) {
@@ -168,7 +168,7 @@ int8_t FrameWorkflow::get_free() {
 
 }
 //-----------------------------------------------------------------------------
-void FrameWorkflow::set_free(int8_t idx) {
+void ImagePipeline::set_free(int8_t idx) {
 //-----------------------------------------------------------------------------
 
     printf("free: %d\n", idx);
@@ -176,7 +176,7 @@ void FrameWorkflow::set_free(int8_t idx) {
 
 }
 //-----------------------------------------------------------------------------
-void FrameWorkflow::set_all_free() {
+void ImagePipeline::set_all_free() {
 //-----------------------------------------------------------------------------
 
     for (int i=0; i < 5;++i) {
@@ -185,7 +185,7 @@ void FrameWorkflow::set_all_free() {
 
 }
 //-----------------------------------------------------------------------------
-FrameWorkflow::FrameWorkflow()
+ImagePipeline::ImagePipeline()
 //-----------------------------------------------------------------------------
 {
     set_all_free();
